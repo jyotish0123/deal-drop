@@ -3,34 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 import { scrapeProduct } from "@/lib/firecrawl";
 import { sendPriceDropAlert } from "@/lib/email";
 
-/*export async function POST(req: Request) {
-  const authHeader = req.headers.get("authorization");
-
-  console.log("CRON_SECRET from ENV:", process.env.CRON_SECRET);
-  console.log("Incoming header:", authHeader);
-
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
-  }
-
-  return new Response(JSON.stringify({ success: true }));
-}*/
-
 export async function POST(req) {
-  const authHeader = req.headers.get("authorization");
+  try {
+    const authHeader = req.headers.get("authorization");
 
-  return new Response(
-    JSON.stringify({
-      envSecret: process.env.CRON_SECRET,
-      incomingHeader: authHeader
-    }),
-    { status: 200 }
-  );
-}
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    // Use service role to bypass RLS
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -41,8 +24,6 @@ export async function POST(req) {
       .select("*");
 
     if (productsError) throw productsError;
-
-    console.log(`Found ${products.length} products to check`);
 
     const results = {
       total: products.length,
@@ -118,7 +99,10 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error("Cron job error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -127,5 +111,3 @@ export async function GET() {
     message: "Price check endpoint is working. Use POST to trigger.",
   });
 }
-
-// curl -X POST https://getdealdrop1.vercel.app/api/cron/check-prices \ -H "Authorization: Bearer sk_live_9sj29dk29dj29d_very_long_random"
