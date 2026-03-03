@@ -3,14 +3,20 @@ import { createClient } from "@supabase/supabase-js";
 import { scrapeProduct } from "@/lib/firecrawl";
 import { sendPriceDropAlert } from "@/lib/email";
 
-export async function POST(request) {
-  try {
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
+export async function POST(req: Request) {
+  const authHeader = req.headers.get("authorization");
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  console.log("CRON_SECRET from ENV:", process.env.CRON_SECRET);
+  console.log("Incoming header:", authHeader);
+
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
+
+  return new Response(JSON.stringify({ success: true }));
+}
 
     // Use service role to bypass RLS
     const supabase = createClient(
@@ -109,3 +115,5 @@ export async function GET() {
     message: "Price check endpoint is working. Use POST to trigger.",
   });
 }
+
+// curl -X POST https://getdealdrop1.vercel.app/api/cron/check-prices \ -H "Authorization: Bearer sk_live_9sj29dk29dj29d_very_long_random"
