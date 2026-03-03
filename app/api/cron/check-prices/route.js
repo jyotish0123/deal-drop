@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { scrapeProduct } from "@/lib/firecrawl";
 import { sendPriceDropAlert } from "@/lib/email";
 
-export async function POST(req: Request) {
+/*export async function POST(req: Request) {
   const authHeader = req.headers.get("authorization");
 
   console.log("CRON_SECRET from ENV:", process.env.CRON_SECRET);
@@ -16,6 +16,18 @@ export async function POST(req: Request) {
   }
 
   return new Response(JSON.stringify({ success: true }));
+}*/
+
+export async function POST(req) {
+  const authHeader = req.headers.get("authorization");
+
+  return new Response(
+    JSON.stringify({
+      envSecret: process.env.CRON_SECRET,
+      incomingHeader: authHeader
+    }),
+    { status: 200 }
+  );
 }
 
     // Use service role to bypass RLS
